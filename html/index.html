@@ -1,0 +1,86 @@
+<DOCTYPE html>
+<html>
+    <head></head>
+    <body>
+        <h1>DC Controller</h1>
+        <p> Serial Port: <span id = "portText"> <button id = "requestSerial">Request</button> </span></p>
+        <div id="turnouts"></div>
+        <p>Direction: <input id="dir" type="button" value="Forward"></p>
+        <input id = "speed" type="range" min="0" max="200" value="0" step = "1" orient = "vertical">
+        <label for = "speed">Speed <span id ="number">0</span>%</label>
+    </body>
+    <script>
+        
+        let port;
+        requestButton = document.getElementById("requestSerial");
+        speed = document.getElementById("speed");
+        requestButton.addEventListener('click', async () => {
+            const filters = [
+                { usbVendorId: 0x2341, usbProductId: 0x0043 },
+                { usbVendorId: 0x2341, usbProductId: 0x0001 },
+                { usbVendorId: 0x0403, usbProductId: 0x6015}
+            ];
+            port = await navigator.serial.requestPort({filters});
+            await port.open({ baudRate: 9600 });
+            
+            document.getElementById("portText").innerHTML = "Connected";
+        });
+
+        
+
+        turnouts = document.getElementById("turnouts");
+        class Switch {
+            constructor(number) {
+                this.id = number;
+                this.msg = new TextEncoder().encode("t"+number);
+                this.btn = document.createElement("button");
+                this.btn.innerHTML = this.number;
+                turnouts.append(this.btn);
+                this.btn.addEventListener('click', async (event) => {
+                    this.btn.innerHTML = number + ": " + await update(this.msg);
+                });
+            }
+        }
+        switch1 = new Switch(1);
+        switch2 = new Switch(2);
+       
+
+        let dir;
+        dirButton = document.getElementById("dir");
+        dirButton.addEventListener('click', (event) => {
+            if (dirButton.value == "Forward") {
+                dirButton.value = "Reverse";
+                dir = "r";
+            } else if (dirButton.value == "Reverse") {
+                dirButton.value = "Forward";
+                dir = "f";
+            }
+            console.log(update(new TextEncoder().encode("d"+dir)));
+        });
+
+
+        update = async (msg) => {
+            let writer = port.writable.getWriter();
+            let data = new Uint8Array(msg);
+            await writer.write(data);
+            console.log('ran');
+            // Allow the serial port to be closed later.
+            writer.releaseLock();
+            let reader = port.readable.getReader();
+            let {value, _} = await reader.read();
+            var strVal = await new TextDecoder().decode(value);
+
+            reader.releaseLock();
+
+            return strVal;
+        };
+
+        speed.addEventListener('change', async (event) => {
+            console.log(speed.value);
+            document.getElementById("number").innerHTML= String(Math.round((speed.value*100)/speed.max));
+            val = await update( new TextEncoder().encode("s"+speed.value) ) ;
+            console.log(val);
+             
+        });
+    </script>
+</html>

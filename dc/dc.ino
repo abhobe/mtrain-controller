@@ -21,7 +21,9 @@ turnout switch1 = turnout(AIN1,AIN2, PWMA);
 turnout switch2 = turnout(BIN1,BIN2, PWMB);
 
 void setup() {
+  
   Serial.begin(9600);
+  Serial.println("Ready");
   pinMode(dirPin,OUTPUT); 
   pinMode(brakePin,OUTPUT);
   //pinMode(pwmPin, OUTPUT);
@@ -76,8 +78,8 @@ void loop() {
       Serial.println("Speed: " + Speed);
     }
     if (msg[0] == 't') {
-      switch1.switchDir();
-      switch2.switchDir();
+      //switch1.switchDir();
+      //switch2.switchDir();
       
       if (msg[1] == '1') {
         switch1.switchDir();
